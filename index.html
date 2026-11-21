@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tapiolan Honka — In-Game Coach Dashboard</title>
+<style>
+  :root{
+    --bg:#0a1510;
+    --panel:#132620;
+    --panel-2:#1a3228;
+    --panel-3:#20392d;
+    --accent:#3ddc84;
+    --accent-2:#5eeba3;
+    --accent-dim:#2a9d5f;
+    --text:#f2faf5;
+    --text-dim:#90ac9d;
+    --red:#ff6b6b;
+    --red-dim:#c94d4d;
+    --amber:#f5c15a;
+    --orange:#f58b4c;
+    --opp:#7d93a8;
+    --opp-dim:#4a5c6b;
+    --border:#254838;
+    --border-soft:rgba(61,220,132,.14);
+    --shadow:0 10px 30px -10px rgba(0,0,0,.55);
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(61,220,132,.10) 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 10%, rgba(94,235,163,.06) 0%, transparent 55%),
+      linear-gradient(180deg, #0c1c15 0%, var(--bg) 40%);
+    color:var(--text);
+    min-height:100vh;
+    padding:28px 16px 72px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  header{text-align:center;margin-bottom:26px;}
+  header .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    background:linear-gradient(135deg, var(--panel-3), var(--panel-2));
+    color:var(--accent-2);
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+    padding:5px 14px;border-radius:999px;margin-bottom:14px;
+    border:1px solid var(--border-soft);
+    box-shadow:0 2px 10px -4px rgba(61,220,132,.25);
+  }
+  h1{
+    font-size:27px;margin:0 0 8px;font-weight:800;letter-spacing:-.01em;
+    background:linear-gradient(135deg, #ffffff 15%, var(--accent-2) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header p{color:var(--text-dim);font-size:14px;margin:0;line-height:1.5;max-width:460px;margin-inline:auto;}
+  #updatedAt{color:var(--text-dim);opacity:.8;}
+
+  .picker{
+    background:linear-gradient(160deg, var(--panel) 0%, var(--panel) 70%, var(--panel-2) 100%);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-bottom:18px;
+    box-shadow:var(--shadow);
+  }
+  .picker label{display:block;font-size:12px;color:var(--accent-2);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;}
+  .select-wrap{position:relative;}
+  .select-wrap::after{
+    content:'';position:absolute;right:18px;top:50%;width:10px;height:10px;
+    border-right:3px solid var(--accent);border-bottom:3px solid var(--accent);
+    transform:translateY(-65%) rotate(45deg);pointer-events:none;
+  }
+  select{
+    width:100%;
+    background:linear-gradient(160deg, rgba(61,220,132,.12) 0%, var(--panel-2) 55%);
+    color:var(--text);
+    border:2px solid var(--accent);
+    border-radius:12px;
+    padding:15px 42px 15px 16px;
+    font-size:16px;
+    font-weight:700;
+    appearance:none;
+    cursor:pointer;
+    box-shadow:0 0 0 3px rgba(61,220,132,.12), 0 2px 10px rgba(0,0,0,.25);
+    transition:border-color .15s, background .15s, box-shadow .15s;
+  }
+  select:hover{border-color:var(--accent-2);box-shadow:0 0 0 4px rgba(61,220,132,.18), 0 2px 10px rgba(0,0,0,.25);}
+  select:focus{outline:none;border-color:var(--accent-2);box-shadow:0 0 0 4px rgba(61,220,132,.28), 0 2px 10px rgba(0,0,0,.25);}
+  /* The select's own background is a gradient, but the open dropdown list is a
+     separate native popup whose background some browsers/OSes render as plain
+     white — force explicit colors on the options so the (light) text stays
+     readable there too, instead of inheriting white-on-white. */
+  select option, select optgroup{
+    background:var(--panel-2);
+    color:var(--text);
+    font-weight:500;
+  }
+
+  .gender-toggle{display:flex;gap:8px;}
+  .gender-btn{
+    flex:1;
+    background:var(--panel-2);
+    color:var(--text-dim);
+    border:2px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:.02em;
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .gender-btn:hover{border-color:var(--accent-dim);}
+  .gender-btn.active{background:var(--accent);color:#06241a;border-color:var(--accent);}
+
+  #refreshBtn{
+    margin-top:16px;
+    background:var(--panel-2);
+    color:var(--accent-2);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:9px 20px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;
+    transition:background .15s, transform .1s, border-color .15s;
+  }
+  #refreshBtn:hover{background:var(--panel-3);border-color:var(--accent-dim);transform:translateY(-1px);}
+  #refreshBtn:active{transform:translateY(0);}
+  #refreshBtn:disabled{opacity:.55;cursor:default;transform:none;}
+
+  #status{color:var(--text-dim);font-size:14px;text-align:center;padding:36px 0;}
+  #status.error{color:var(--red);}
+
+  .tab-row{display:flex;gap:8px;margin:16px 0 4px;}
+  .tab-btn{
+    flex:1;
+    background:var(--panel-2);
+    color:var(--text-dim);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:11px 14px;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.03em;
+    cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .tab-btn:hover{border-color:var(--accent-dim);}
+  .tab-btn.active{background:var(--accent);color:#06241a;border-color:var(--accent);}
+
+  .sort-row{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+  .sort-row-label{font-size:11px;color:var(--text-dim);font-weight:700;letter-spacing:.03em;margin-right:2px;}
+  .sort-pill{
+    background:var(--panel-2);color:var(--text-dim);border:1px solid var(--border);
+    border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .sort-pill:hover{border-color:var(--accent-dim);}
+  .sort-pill.active{background:var(--accent);color:#06241a;border-color:var(--accent);}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--text);}
+  th.sortable.active{color:var(--accent-2);}
+  th.sortable .sort-arrow{font-size:10px;margin-left:3px;opacity:.8;}
+  /* Boxes in the currently-sorted column (header + every cell below it) so
+     it's obvious at a glance which stat the table is ordered by. */
+  .players th.col-sorted{box-shadow:inset 0 2px 0 0 var(--accent-2), inset 0 -2px 0 0 var(--accent-2);}
+  .players td.col-sorted{box-shadow:inset 2px 0 0 0 rgba(61,220,132,.35), inset -2px 0 0 0 rgba(61,220,132,.35);}
+  .players tr.team-total-row td.col-sorted{box-shadow:inset 2px 0 0 0 rgba(61,220,132,.35), inset -2px 0 0 0 rgba(61,220,132,.35), inset 0 2px 0 0 rgba(61,220,132,.35);}
+
+  .card{
+    background:linear-gradient(165deg, var(--panel) 0%, var(--panel) 75%, var(--panel-2) 100%);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow);
+    animation:fadeUp .35s ease both;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .matchup{
+    display:flex;align-items:center;justify-content:center;gap:16px;
+    flex-wrap:wrap;margin-bottom:4px;
+  }
+  .team-name{font-size:18px;font-weight:700;color:var(--text);}
+  .team-name.honka{color:var(--accent-2);}
+  .score{
+    font-size:34px;font-weight:800;letter-spacing:.01em;
+    padding:2px 14px;border-radius:12px;background:var(--panel-2);
+    min-width:120px;text-align:center;
+  }
+  .meta-row{text-align:center;color:var(--text-dim);font-size:13px;margin-top:5px;}
+  .periods{
+    display:flex;justify-content:center;gap:6px;margin-top:16px;flex-wrap:wrap;
+  }
+  .periods span{
+    background:var(--panel-2);border:1px solid var(--border);
+    border-radius:9px;padding:5px 11px;font-size:12px;color:var(--text-dim);font-weight:600;
+  }
+
+  .section-title{
+    font-size:12.5px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--accent-2);margin:0 0 14px;font-weight:800;
+    display:flex;align-items:center;gap:8px;
+  }
+
+  .stat-line{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px 14px;
+    padding:8px 10px;border-radius:10px;font-size:14px;margin-bottom:2px;
+  }
+  .stat-line.sig-good{background:rgba(61,220,132,.10);}
+  .stat-line.sig-bad{background:rgba(255,107,107,.10);}
+  .stat-line .label{grid-column:2;color:var(--text-dim);text-align:center;font-size:11.5px;white-space:nowrap;display:flex;align-items:center;gap:5px;justify-content:center;}
+  .stat-line .label .flag{font-size:12px;}
+  .stat-line .val-a{text-align:right;font-weight:600;}
+  .stat-line .val-b{text-align:left;font-weight:600;}
+  .stat-line.sig-good .val-a{color:var(--accent-2);font-weight:800;}
+  .stat-line.sig-bad .val-a{color:var(--red);font-weight:800;}
+
+  .signal{
+    display:flex;gap:11px;align-items:flex-start;
+    padding:11px 12px;margin-top:6px;
+    border-radius:11px;background:rgba(255,255,255,.02);
+    font-size:14px;line-height:1.5;
+    border-left:3px solid transparent;
+    transition:background .15s;
+  }
+  .signal:hover{background:rgba(255,255,255,.04);}
+  .signal-group:first-child .signal:first-child{margin-top:8px;}
+  .signal .icon{font-size:16px;line-height:1.5;flex-shrink:0;}
+  .signal.critical{border-left-color:var(--red);}
+  .signal.weakness{border-left-color:var(--orange);}
+  .signal.watch{border-left-color:var(--amber);}
+  .signal.strength{border-left-color:var(--accent);}
+  .signal b{color:var(--text);}
+
+  .signal-group{margin-bottom:4px;}
+  .signal-group + .signal-group{margin-top:20px;}
+  .signal-group-title{
+    font-size:11.5px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;padding:5px 12px;
+    border-radius:8px;display:inline-block;
+  }
+  .signal-group-title.critical{background:rgba(255,107,107,.15);color:var(--red);}
+  .signal-group-title.weakness{background:rgba(245,139,76,.15);color:var(--orange);}
+  .signal-group-title.watch{background:rgba(245,193,90,.15);color:var(--amber);}
+  .signal-group-title.strength{background:rgba(61,220,132,.15);color:var(--accent-2);}
+
+  .pm-row{display:grid;grid-template-columns:120px 1fr 48px;gap:10px;align-items:center;padding:5px 0;font-size:13px;}
+  .pm-row span:first-child{font-weight:600;}
+  .pm-track{position:relative;height:15px;background:var(--panel-2);border-radius:5px;overflow:hidden;}
+  .pm-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border);}
+  .pm-fill{position:absolute;top:1px;bottom:1px;border-radius:4px;}
+  .pm-fill.pos{background:linear-gradient(90deg, var(--accent-dim), var(--accent));left:50%;}
+  .pm-fill.neg{background:linear-gradient(90deg, var(--red), var(--red-dim));right:50%;}
+  .pm-val{text-align:right;font-weight:800;}
+  .pm-val.pm-pos{color:var(--accent-2);}
+  .pm-val.pm-neg{color:var(--red);}
+
+  .pmd-row{padding:7px 0;border-bottom:1px solid var(--border-soft);}
+  .pmd-row:last-child{border-bottom:none;}
+  .pmd-name{font-weight:600;font-size:13px;color:#fff;}
+  .pmd-substats{color:var(--text-dim);font-size:11.5px;margin-left:6px;font-weight:400;}
+  .pmd-substats .pmd-key-stat{color:#fff;font-size:13px;font-weight:800;}
+  .pmd-bar-row{display:flex;align-items:center;gap:10px;margin-top:4px;}
+  .pmd-bar-row .pm-track{flex:1;}
+  .pmd-val{font-weight:800;font-size:13px;min-width:66px;text-align:right;}
+  .pmd-eff{font-size:11.5px;color:var(--text-dim);min-width:72px;text-align:right;}
+  .pmd-eff.eff-high{color:var(--accent-2);font-weight:800;}
+  .pmd-eff.eff-low{color:var(--red);font-weight:800;}
+  /* Marks whichever column (±/min or EFF/min) is the currently selected sort
+     metric, so it's obvious which numbers to focus on. */
+  .pmd-val.col-active, .pmd-eff.col-active{
+    outline:1.5px solid var(--accent-2);
+    border-radius:6px;
+    padding:2px 8px;
+    background:rgba(61,220,132,.08);
+  }
+  .pmd-eff.col-active{font-weight:800;}
+
+  .pmd-fouls{display:inline-flex;align-items:center;gap:5px;margin-left:8px;vertical-align:middle;}
+  .pmd-fouls-label{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--text-dim);}
+  .foul-pip-simple{width:7px;height:7px;border-radius:50%;display:inline-block;border:1px solid var(--red);background:transparent;}
+  .foul-pip-simple.filled{background:var(--red);}
+
+  .note{font-size:12.5px;color:var(--text-dim);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px dashed var(--border);}
+
+  .foul-team-block{margin-bottom:18px;}
+  .foul-team-block:last-child{margin-bottom:0;}
+  .foul-team-label{
+    font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;
+    margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .foul-team-total{font-weight:600;text-transform:none;letter-spacing:0;opacity:.8;}
+  .foul-list{display:flex;flex-direction:column;gap:9px;}
+  .foul-row{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.02);
+  }
+  .foul-row.danger{background:rgba(255,107,107,.10);}
+  .foul-row.watch{background:rgba(245,139,76,.08);}
+  .foul-name{font-weight:700;min-width:140px;flex-shrink:0;}
+  .foul-pips{display:inline-flex;gap:4px;}
+  .foul-pip{width:10px;height:10px;border-radius:50%;background:var(--panel-2);display:inline-block;}
+  .foul-count{font-weight:800;font-size:13px;min-width:18px;}
+  .foul-status{color:var(--text-dim);font-size:12px;margin-left:auto;}
+
+  .live-badge{
+    display:inline-flex;align-items:center;gap:7px;
+    background:rgba(255,107,107,.14);color:var(--red);border:1px solid rgba(255,107,107,.4);
+    border-radius:999px;padding:4px 13px;font-size:12px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;margin-bottom:12px;
+  }
+  .live-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;box-shadow:0 0 0 0 rgba(255,107,107,.5);}
+  @keyframes pulse{0%{opacity:1;box-shadow:0 0 0 0 rgba(255,107,107,.5);}70%{opacity:.4;box-shadow:0 0 0 5px rgba(255,107,107,0);}100%{opacity:1;}}
+
+  .period-margin-row{display:flex;gap:6px;margin-top:4px;}
+  .period-margin-row .seg{
+    flex:1;text-align:center;border-radius:10px;padding:10px 4px;font-size:13px;font-weight:800;
+    display:flex;flex-direction:column;gap:3px;
+  }
+  .period-margin-row .seg small{font-size:10.5px;font-weight:600;opacity:.75;text-transform:uppercase;letter-spacing:.03em;}
+  .period-margin-row .seg.pos{background:rgba(61,220,132,.14);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(61,220,132,.25);}
+  .period-margin-row .seg.neg{background:rgba(255,107,107,.14);color:var(--red);box-shadow:inset 0 0 0 1px rgba(255,107,107,.25);}
+  .period-margin-row .seg.zero{background:var(--panel-2);color:var(--text-dim);}
+
+  .players{width:100%;border-collapse:collapse;font-size:13px;}
+  .players th{
+    text-align:left;color:var(--text-dim);font-weight:700;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+    padding:8px 9px;border-bottom:1px solid var(--border);
+  }
+  .players td{padding:9px 9px;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .players tr:nth-child(even){background:rgba(255,255,255,.015);}
+  .players tr:hover{background:rgba(61,220,132,.05);}
+  .players tr:last-child td{border-bottom:none;}
+  .players td.num, .players th.num{text-align:right;}
+  .players .starter{color:var(--accent-2);font-weight:700;}
+  .foul-high{color:var(--red);font-weight:800;}
+  .foul-mid{color:var(--amber);font-weight:800;}
+  .pm-pos{color:var(--accent-2);}
+  .pm-neg{color:var(--red);}
+
+  .coaches{color:var(--text-dim);font-size:13px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+  .coaches b{color:var(--text);}
+
+  .footer-note{
+    text-align:center;color:var(--text-dim);font-size:12px;margin-top:26px;line-height:1.65;opacity:.85;
+  }
+  .footer-note a{color:var(--accent-2);text-decoration:none;border-bottom:1px solid var(--border-soft);}
+  .footer-note a:hover{border-color:var(--accent-2);}
+
+  table{overflow-x:auto;display:block;border-radius:10px;}
+  @media(min-width:520px){ table{display:table;} }
+
+  ::-webkit-scrollbar{height:6px;width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tapiolan Honka — In-Game Coach Dashboard</h1>
+    <p>In-game decision support: pick the live or just-finished game, refresh during a timeout or quarter break</p>
+    <p id="updatedAt" style="margin-top:8px;font-size:12px;"></p>
+    <button id="refreshBtn" type="button">🔄 Refresh data</button>
+  </header>
+
+  <div class="picker">
+    <label>League</label>
+    <div class="gender-toggle">
+      <button type="button" class="gender-btn active" id="genderMenBtn" data-gender="men">Men</button>
+      <button type="button" class="gender-btn" id="genderWomenBtn" data-gender="women">Women</button>
+    </div>
+  </div>
+
+  <div class="picker">
+    <label for="gameSelect">Game</label>
+    <div class="select-wrap">
+      <select id="gameSelect">
+        <option>Loading games…</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tab-row">
+    <button type="button" class="tab-btn active" id="tabBreakBtn">IN-GAME BREAK SUMMARY</button>
+    <button type="button" class="tab-btn" id="tabSeasonBtn">FULL SEASON</button>
+  </div>
+
+  <div id="status">Fetching Tapiolan Honka's schedule from basket.fi…</div>
+  <div id="content"></div>
+
+  <div class="footer-note">
+    Data: <a href="https://basket.fi/sarjat/tilastopalvelu/" target="_blank" rel="noopener">basket.fi stats service</a> (Finnish Basketball Association / Sportradar). The IN-GAME BREAK SUMMARY tab always covers only the selected single game; the FULL SEASON tab aggregates every played game in the selected league (men's or women's) so far.
+    Data does not refresh automatically during a game: ask for a refresh during a break, and the page will show the latest available stats. Signals below are computed automatically from the box score using simple thresholds — they are an aid, not a substitute for the coach's own judgment.
+  </div>
+</div>
+
+<script>
+const TEAM_NAME = 'Tapiolan Honka';
+const DATA_URL = './data.json';
+
+const selectEl = document.getElementById('gameSelect');
+const statusEl = document.getElementById('status');
+const contentEl = document.getElementById('content');
+const tabBreakBtn = document.getElementById('tabBreakBtn');
+const tabSeasonBtn = document.getElementById('tabSeasonBtn');
+const genderMenBtn = document.getElementById('genderMenBtn');
+const genderWomenBtn = document.getElementById('genderWomenBtn');
+
+let currentTab = 'break'; // 'break' | 'season'
+let currentGender = 'men'; // 'men' | 'women' — which league's games the Game picker and FULL SEASON tab show
+let jundexSortBy = 'pm'; // 'pm' | 'eff'
+let shootingSortBy = '3p'; // starts sorted by 3P% on page load; '3p' | '2p' | 'ft'
+let ffSortBy = 'efg'; // 'efg' | 'tov' | 'orb' | 'ft'
+
+function rerenderCurrent(){
+  if(gamesCache.length && selectEl.selectedIndex >= 0){
+    renderGame(gamesCache[Number(selectEl.value)]);
+  }
+}
+function setJundexSort(by){ jundexSortBy = by; rerenderCurrent(); }
+function setShootingSort(by){ shootingSortBy = by; rerenderCurrent(); }
+function setFfSort(by){ ffSortBy = by; rerenderCurrent(); }
+
+tabBreakBtn.addEventListener('click', () => setTab('break'));
+tabSeasonBtn.addEventListener('click', () => setTab('season'));
+genderMenBtn.addEventListener('click', () => setGender('men'));
+genderWomenBtn.addEventListener('click', () => setGender('women'));
+
+function setTab(tab){
+  currentTab = tab;
+  tabBreakBtn.classList.toggle('active', tab === 'break');
+  tabSeasonBtn.classList.toggle('active', tab === 'season');
+  if(gamesCache.length && selectEl.selectedIndex >= 0){
+    renderGame(gamesCache[Number(selectEl.value)]);
+  }
+}
+
+function setGender(gender){
+  if(gender === currentGender) return;
+  currentGender = gender;
+  genderMenBtn.classList.toggle('active', gender === 'men');
+  genderWomenBtn.classList.toggle('active', gender === 'women');
+  populateGameSelect();
+}
+
+let gamesAllCache = []; // every game, both leagues, time-sorted
+let gamesCache = []; // games for currentGender only, time-sorted — what the Game picker and both tabs use
+let dataMeta = null;
+
+function setStatus(msg, isError){
+  statusEl.textContent = msg;
+  statusEl.className = isError ? 'error' : '';
+  statusEl.style.display = msg ? 'block' : 'none';
+}
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
+         d.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+}
+
+async function fetchJSON(url){
+  const r = await fetch(url, {cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
+  return r.json();
+}
+
+// Rebuilds the Game <select> from gamesAllCache for the currently selected
+// gender (currentGender), picks a sensible default game, and renders it.
+// preserveId, when given, is tried first (keeps the same game selected across
+// a gender-preserving refresh); otherwise falls back to the usual "most
+// recent played game, else most recent past game, else first game" default.
+function populateGameSelect(preserveId){
+  const filtered = gamesAllCache.filter(g => (g.gender === 'men' ? 'men' : 'women') === currentGender);
+  gamesCache = filtered;
+
+  selectEl.innerHTML = '';
+  const now = new Date();
+  let lastPlayedIdx = null; // most recent played (has stats) game in this league — the default
+  let lastPastIdx = null; // fallback: most recent game that's already happened
+  filtered.forEach((g, i) => {
+    const opponent = g.teamA === TEAM_NAME ? g.teamB : g.teamA;
+    const home = g.teamA === TEAM_NAME;
+    const isLive = g.status === 'LIVE' && g.scoreA !== null;
+    const played = (g.status === 'CONFIRMED' || isLive) && g.scoreA !== null;
+    let label = `${fmtDate(g.time).split(' ')[0]} — ${home ? 'Honka vs ' + opponent : opponent + ' vs Honka'}`;
+    if(isLive){
+      label += ` (${g.scoreA}–${g.scoreB}, LIVE)`;
+    } else if(played){
+      label += ` (${g.scoreA}–${g.scoreB})`;
+    } else {
+      label += ' · upcoming';
+    }
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+    if(new Date(g.time) <= now) lastPastIdx = i;
+    if(played) lastPlayedIdx = i; // games arrive time-sorted ascending, so last wins; a LIVE game counts too, so it becomes the default while in progress
+  });
+
+  let defaultIdx = lastPlayedIdx !== null ? lastPlayedIdx : (lastPastIdx !== null ? lastPastIdx : 0);
+  if(preserveId){
+    const prevIdx = filtered.findIndex(g => g.id === preserveId);
+    if(prevIdx !== -1) defaultIdx = prevIdx;
+  }
+
+  if(!filtered.length){
+    setStatus('No games found for this league yet.', false);
+    contentEl.innerHTML = '';
+    return;
+  }
+
+  selectEl.selectedIndex = defaultIdx;
+  setStatus('');
+  renderGame(gamesCache[defaultIdx]);
+}
+
+async function loadGames(preserveSelection){
+  const prevId = preserveSelection && gamesCache.length ? gamesCache[selectEl.selectedIndex]?.id : null;
+  try{
+    const bust = DATA_URL + (DATA_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+    const data = await fetchJSON(bust);
+    const isNew = !dataMeta || data.generatedAt !== dataMeta.generatedAt;
+    dataMeta = data;
+    const updEl = document.getElementById('updatedAt');
+    if(updEl && data.generatedAt){
+      updEl.textContent = 'Data last refreshed ' + fmtDate(data.generatedAt);
+    }
+    const honka = [...data.games];
+    honka.sort((a,b) => new Date(a.time) - new Date(b.time));
+    gamesAllCache = honka;
+
+    // On first load (no previous selection to preserve), default the League
+    // toggle to whichever league has the most recently played game overall —
+    // this matches the dashboard's previous single-dropdown default.
+    if(!prevId){
+      const now = new Date();
+      let bestGender = 'men', bestTime = -Infinity;
+      honka.forEach(g => {
+        const played = (g.status === 'CONFIRMED' || (g.status === 'LIVE' && g.scoreA !== null)) && g.scoreA !== null;
+        if(played){
+          const t = new Date(g.time).getTime();
+          if(t > bestTime){ bestTime = t; bestGender = (g.gender === 'men' ? 'men' : 'women'); }
+        }
+      });
+      currentGender = bestGender;
+      genderMenBtn.classList.toggle('active', currentGender === 'men');
+      genderWomenBtn.classList.toggle('active', currentGender === 'women');
+    }
+
+    populateGameSelect(prevId);
+    return isNew;
+  }catch(e){
+    setStatus('Failed to fetch games: ' + e.message, true);
+    return false;
+  }
+}
+
+selectEl.addEventListener('change', () => {
+  const g = gamesCache[Number(selectEl.value)];
+  renderGame(g);
+});
+
+const refreshBtn = document.getElementById('refreshBtn');
+if(refreshBtn){
+  refreshBtn.title = 'Reloads the data.json file published with this page. The underlying basket.fi data only updates when you ask Claude to refresh it in chat.';
+  refreshBtn.addEventListener('click', async () => {
+    refreshBtn.disabled = true;
+    const original = refreshBtn.textContent;
+    refreshBtn.textContent = '⏳ Refreshing…';
+    const isNew = await loadGames(true);
+    refreshBtn.textContent = isNew ? '✅ New data loaded' : '✅ Already up to date';
+    setTimeout(() => { refreshBtn.textContent = original; refreshBtn.disabled = false; }, 2000);
+  });
+}
+
+function periodCells(game){
+  if(!game.periods) return '';
+  return game.periods.map((pair, i) => `<span>Q${i+1}: ${pair[0]}–${pair[1]}</span>`).join('');
+}
+
+function gameClockLabel(game){
+  const periodsPlayed = (game.periods || []).length;
+  const regMin = Math.min(periodsPlayed, 4) * 10;
+  const otMin = Math.max(0, periodsPlayed - 4) * 5;
+  const minutesPlayed = regMin + otMin;
+  const isFinal = game.status === 'CONFIRMED' && game.scoreA !== null;
+  if(isFinal){
+    return `<span class="live-badge" style="background:rgba(61,220,132,.14);color:var(--accent-2);border-color:rgba(61,220,132,.4);">FINAL · ${minutesPlayed} min played</span>`;
+  }
+  if(game.liveClockLabel){
+    return `<span class="live-badge"><span class="dot"></span>LIVE · ${game.liveClockLabel}</span>`;
+  }
+  return `<span class="live-badge"><span class="dot"></span>LIVE · through Q${periodsPlayed} · ~${minutesPlayed} min played</span>`;
+}
+
+function simpleFoulPips(count){
+  let out = '';
+  for(let i=0;i<5;i++){
+    out += `<span class="foul-pip-simple ${i<count ? 'filled' : ''}"></span>`;
+  }
+  return out;
+}
+
+
+function buildPmPerMinChart(players){
+  const withMinutes = (players||[]).filter(p => ((p.min||0)+(p.sec||0)) > 0);
+  if(!withMinutes.length) return '<p style="color:var(--text-dim);">No ± data available.</p>';
+  const withRate = withMinutes.map(p => {
+    const totalMin = (p.min||0) + (p.sec||0)/60;
+    const eqNum = Number(p.eq);
+    return {
+      ...p,
+      _pmPerMin: totalMin > 0 ? p.pm / totalMin : 0,
+      _effPerMin: (totalMin > 0 && !isNaN(eqNum)) ? eqNum / totalMin : null,
+    };
+  });
+  const sorted = jundexSortBy === 'eff'
+    ? [...withRate].sort((a,b) => (b._effPerMin ?? -Infinity) - (a._effPerMin ?? -Infinity))
+    : [...withRate].sort((a,b) => b._pmPerMin - a._pmPerMin);
+  // The bar always tracks whichever metric is currently the active sort
+  // (±/min or EFF/min), colored green when that metric is positive and red
+  // when it's negative.
+  const metricOf = p => jundexSortBy === 'eff' ? (p._effPerMin ?? 0) : p._pmPerMin;
+  const maxAbs = Math.max(0.05, ...sorted.map(p => Math.abs(metricOf(p))));
+  return sorted.map(p => {
+    const activeVal = metricOf(p);
+    const widthPct = Math.min(50, Math.round((Math.abs(activeVal)/maxAbs)*50));
+    const cls = activeVal >= 0 ? 'pos' : 'neg';
+    const valCls = p._pmPerMin > 0 ? 'pm-pos' : (p._pmPerMin < 0 ? 'pm-neg' : '');
+    const blk = (p.blk !== undefined && p.blk !== null) ? p.blk : '–';
+    const minStr = `${p.min ?? 0}:${String(p.sec ?? 0).padStart(2,'0')}`;
+    const m3 = Math.round((p.s_3a||0) * (p.pct_3p||0));
+    const fgm = (p.s2m||0) + m3;
+    const efg = (p.fga||0) > 0 ? (fgm + 0.5*m3) / p.fga : null;
+    const efgStr = efg === null ? '–' : pct(efg);
+    const sub = `<span class="pmd-key-stat">${minStr} min</span>, <span class="pmd-key-stat">${p.pts ?? 0}pts</span>, <span class="pmd-key-stat">${p.rt ?? 0}reb</span>, <span class="pmd-key-stat">${p.ass ?? 0}ast</span>, ${blk}blk, ${p.stl ?? 0}stl, ${p.to ?? 0}to, ${p.eq ?? '–'}eff, ${efgStr} eFG`;
+    const sign = p._pmPerMin > 0 ? '+' : '';
+    let effStr = '–', effCls = '';
+    if(p._effPerMin !== null){
+      effStr = `${p._effPerMin.toFixed(2)} eff/min`;
+      if(p._effPerMin > 0.7) effCls = 'eff-high';
+      else if(p._effPerMin < 0) effCls = 'eff-low';
+    }
+    return `
+      <div class="pmd-row">
+        <span class="pmd-name">#${p.sh ?? '–'} ${p.n}<span class="pmd-substats">(${sub})</span><span class="pmd-fouls"><span class="pmd-fouls-label">FOULS</span>${simpleFoulPips(p.pf||0)}</span></span>
+        <div class="pmd-bar-row">
+          <div class="pm-track"><div class="pm-mid"></div><div class="pm-fill ${cls}" style="width:${widthPct}%"></div></div>
+          <span class="pmd-val ${valCls} ${jundexSortBy==='pm' ? 'col-active' : ''}">${sign}${p._pmPerMin.toFixed(2)} ±/min</span>
+          <span class="pmd-eff ${effCls} ${jundexSortBy==='eff' ? 'col-active' : ''}">${effStr}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function pmPerMinBlockHTML(players, teamLabel){
+  if(!(players||[]).length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No ± data available.</p></div>`;
+  }
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      ${buildPmPerMinChart(players)}
+    </div>`;
+}
+
+function buildPmPerMinBothTeamsHTML(honkaPlayers, oppPlayers, oppName){
+  const sortRowHTML = `
+    <div class="sort-row">
+      <span class="sort-row-label">Sort by</span>
+      <button type="button" class="sort-pill ${jundexSortBy==='pm'?'active':''}" onclick="setJundexSort('pm')">± per min</button>
+      <button type="button" class="sort-pill ${jundexSortBy==='eff'?'active':''}" onclick="setJundexSort('eff')">EFF per min</button>
+    </div>`;
+  return `
+    <div class="card">
+      <div class="section-title">📈 JUNDEX MODIFIED INDEX — both teams</div>
+      ${sortRowHTML}
+      ${pmPerMinBlockHTML(honkaPlayers, 'Tapiolan Honka')}
+      ${pmPerMinBlockHTML(oppPlayers, oppName)}
+      <div class="note">Sorted by ${jundexSortBy === 'eff' ? 'EFF/min' : '±/min'} (use the buttons above to switch). ±/min and efficiency (eq) are both divided by minutes played, so players with different floor time are comparable. EFF/min is bold green above 0.7, bold red below 0. In parentheses after each name: minutes played, points, rebounds and assists (highlighted in white), blocks, steals, turnovers, efficiency (eq), and eFG (effective field-goal %, which gives extra credit for 3-pointers) — all for this game. The five dots after that show personal fouls — filled red = committed, empty = remaining before fouling out (FIBA limit is 5).</div>
+    </div>`;
+}
+
+function renderGame(game){
+  contentEl.innerHTML = '';
+  if(!game){ return; }
+
+  if(currentTab === 'season'){
+    setStatus('');
+    contentEl.innerHTML = buildFullSeasonHTML(gamesAllCache, currentGender);
+    return;
+  }
+
+  const home = game.teamA === TEAM_NAME;
+  const played = (game.status === 'CONFIRMED' || game.status === 'LIVE') && game.scoreA !== null;
+
+  if(!played){
+    const now = new Date();
+    const started = new Date(game.time) <= now;
+    contentEl.innerHTML = `
+      <div class="card">
+        ${started ? '<div class="live-badge"><span class="dot"></span>Possibly in progress</div>' : ''}
+        <div class="matchup">
+          <span class="team-name ${home ? 'honka' : ''}">${game.teamA}</span>
+          <span class="score">–</span>
+          <span class="team-name ${!home ? 'honka' : ''}">${game.teamB}</span>
+        </div>
+        <div class="meta-row">${fmtDate(game.time)} · ${game.arena || ''} ${game.city ? '('+game.city+')' : ''}</div>
+        <div class="meta-row" style="margin-top:10px;">
+          ${started
+            ? 'The game may have started, but the stats service has not confirmed the box score yet. Press "Refresh data" during a break, or ask me to pull the latest numbers from basket.fi — analytics and signals will appear here once the first period stats are available.'
+            : 'This game has not been played yet — analytics and coaching signals will appear here once the game has started and data is available.'}
+        </div>
+      </div>`;
+    return;
+  }
+
+  setStatus('');
+  contentEl.innerHTML = buildBreakSummaryHTML(game, home);
+}
+
+function pct(x){ return x === null || x === undefined ? '–' : Math.round(x*1000)/10 + '%'; }
+function pct1(x){ return x === null || x === undefined ? '–' : (Math.round(x*1000)/10).toFixed(1) + '%'; }
+
+function fourFactorsTableHTML(players, teamMinutesTotal, teamORB, oppDRB, teamLabel){
+  const withMin = (players||[]).filter(p => ((p.min||0)+(p.sec||0)) > 0);
+  if(!withMin.length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No data available.</p></div>`;
+  }
+  const orbDenom = teamORB + oppDRB;
+  const withStats = withMin.map(p => {
+    const minPlayed = (p.min||0) + (p.sec||0)/60;
+    const m3 = Math.round((p.s_3a||0) * (p.pct_3p||0));
+    const fgm = (p.s2m||0) + m3;
+    const fga = p.fga || 0;
+    const efg = fga > 0 ? (fgm + 0.5*m3) / fga : null;
+    const fta = p.fta || 0;
+    const to = p.to || 0;
+    const tovDenom = fga + 0.44*fta + to;
+    const tovPct = tovDenom > 0 ? to / tovDenom : null;
+    const orb = p.ro || 0;
+    const orbPct = (minPlayed > 0 && orbDenom > 0) ? (orb * (teamMinutesTotal/5)) / (minPlayed * orbDenom) : null;
+    const ftRate = fga > 0 ? fta / fga : null;
+    return { ...p, _efg: efg, _tov: tovPct, _orb: orbPct, _ftRate: ftRate };
+  });
+  const sortKeyMap = { efg: '_efg', tov: '_tov', orb: '_orb', ft: '_ftRate' };
+  const sortKey = sortKeyMap[ffSortBy] || '_efg';
+  const sortAscending = ffSortBy === 'tov';
+  const sorted = [...withStats].sort((a,b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if(av === null && bv === null) return 0;
+    if(av === null) return 1;
+    if(bv === null) return -1;
+    return sortAscending ? (av - bv) : (bv - av);
+  });
+  const colCls = key => ffSortBy === key ? ' col-sorted' : '';
+  const rowsHTML = sorted.map(p => {
+    return `
+      <tr>
+        <td>${p.n}</td>
+        <td class="num${colCls('efg')}" style="${ffStatColor('efg', p._efg)}">${p._efg === null ? '–' : pct1(p._efg)}</td>
+        <td class="num${colCls('tov')}" style="${ffStatColor('tov', p._tov)}">${p._tov === null ? '–' : pct1(p._tov)}</td>
+        <td class="num${colCls('orb')}" style="${ffStatColor('orb', p._orb)}">${p._orb === null ? '–' : pct1(p._orb)}</td>
+        <td class="num${colCls('ft')}" style="${ffStatColor('ft', p._ftRate)}">${p._ftRate === null ? '–' : p._ftRate.toFixed(2)}</td>
+      </tr>`;
+  }).join('');
+  const arrow = key => ffSortBy === key ? `<span class="sort-arrow">${key==='tov' ? '▲' : '▼'}</span>` : '';
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      <table class="players">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="num sortable ${ffSortBy==='efg'?'active col-sorted':''}" onclick="setFfSort('efg')">eFG%${arrow('efg')}</th>
+            <th class="num sortable ${ffSortBy==='tov'?'active col-sorted':''}" onclick="setFfSort('tov')">TOV%${arrow('tov')}</th>
+            <th class="num sortable ${ffSortBy==='orb'?'active col-sorted':''}" onclick="setFfSort('orb')">ORB%${arrow('orb')}</th>
+            <th class="num sortable ${ffSortBy==='ft'?'active col-sorted':''}" onclick="setFfSort('ft')">FT Rate${arrow('ft')}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+function buildFourFactorsHTML(honkaPlayers, oppPlayers, oppName){
+  const teamMin = arr => (arr||[]).reduce((s,p) => s + (p.min||0) + (p.sec||0)/60, 0);
+  const teamORB = arr => (arr||[]).reduce((s,p) => s + (p.ro||0), 0);
+  const teamDRB = arr => (arr||[]).reduce((s,p) => s + (p.rd||0), 0);
+
+  const hMin = teamMin(honkaPlayers), oMin = teamMin(oppPlayers);
+  const hORB = teamORB(honkaPlayers), oORB = teamORB(oppPlayers);
+  const hDRB = teamDRB(honkaPlayers), oDRB = teamDRB(oppPlayers);
+
+  const honkaTableHTML = fourFactorsTableHTML(honkaPlayers, hMin, hORB, oDRB, 'Tapiolan Honka');
+  const oppTableHTML = fourFactorsTableHTML(oppPlayers, oMin, oORB, hDRB, oppName);
+
+  return `
+    <div class="card">
+      <div class="section-title">🧮 FOUR FACTORS — per player</div>
+      ${honkaTableHTML}
+      ${oppTableHTML}
+      <div class="note">Dean Oliver's four factors (shooting, turnovers, rebounding, free throws), computed per player for the minutes they were on the floor, instead of as one team number. eFG% = effective field-goal % (extra credit for 3s). TOV% = turnovers per individual possession used (FGA + 0.44×FTA + TOV). ORB% estimates the share of available offensive rebounds a player grabbed while on the floor — basket.fi has no lineup-level on/off data, so this uses the standard estimate: the player's offensive rebounds scaled by their share of the team's total minutes, divided by the team's and opponent's combined rebounding opportunities. FT Rate = free-throw attempts per field-goal attempt (drawing fouls / getting to the line). Only players who saw the floor are listed. Click a column header (eFG% / TOV% / ORB% / FT Rate) to sort both teams' tables by that stat — TOV% sorts lowest (best) first, the others sort highest first. Text color is against fixed benchmark thresholds, not relative to the other rows: green = good, white = average, red = poor (eFG% good ≥50%/poor &lt;40%; TOV% good ≤12%/poor ≥18%, lower is better; ORB% good ≥30%/poor &lt;20%; FT Rate good ≥0.25/poor &lt;0.12).</div>
+    </div>`;
+}
+
+function buildSignals(hTeam, oTeam, players, honkaWon){
+  const signals = [];
+
+  const toDiff = hTeam.turnovers - oTeam.turnovers;
+  if(toDiff >= 8){
+    signals.push({level:'critical', icon:'⚠️', text:`Honka: <b>${hTeam.turnovers} turnovers</b>, opponent ${oTeam.turnovers}. Opponent scored ${oTeam.pft} points off turnovers.`});
+  } else if(toDiff >= 4){
+    signals.push({level:'weakness', icon:'↩️', text:`Honka: <b>${hTeam.turnovers} turnovers</b>, opponent ${oTeam.turnovers}. Opponent scored ${oTeam.pft} points off turnovers.`});
+  }
+
+  if(hTeam.s_3a >= 15 && hTeam.pct_3p < 0.30){
+    signals.push({level:'watch', icon:'🎯', text:`3-point percentage ${pct(hTeam.pct_3p)} on ${hTeam.s_3a} attempts.`});
+  }
+
+  const benchDiff = hTeam.pbench - oTeam.pbench;
+  if(benchDiff >= 8){
+    signals.push({level:'strength', icon:'💪', text:`Bench scored <b>${hTeam.pbench} points</b>, opponent bench ${oTeam.pbench}.`});
+  } else if(benchDiff <= -8){
+    signals.push({level:'weakness', icon:'🪑', text:`Opponent bench scored ${oTeam.pbench} points, Honka bench ${hTeam.pbench}.`});
+  }
+
+  const scDiff = oTeam.psc - hTeam.psc;
+  if(scDiff >= 12){
+    signals.push({level:'weakness', icon:'🏀', text:`Opponent scored ${oTeam.psc} second-chance points, Honka ${hTeam.psc}.`});
+  } else if(scDiff >= 6){
+    signals.push({level:'watch', icon:'🏀', text:`Opponent scored ${oTeam.psc} second-chance points, Honka ${hTeam.psc}.`});
+  }
+
+  if(hTeam.pfb - oTeam.pfb >= 8){
+    signals.push({level:'strength', icon:'⚡', text:`Fast break points: ${hTeam.pfb}, opponent ${oTeam.pfb}.`});
+  }
+
+  if(hTeam.blead >= 10 && !honkaWon){
+    signals.push({level:'critical', icon:'📉', text:`Honka led by as much as ${hTeam.blead} points, but the game still ended in a loss.`});
+  }
+  const totalSeconds = 2400;
+  const leadSharePct = Math.round((hTeam.tlead / totalSeconds) * 100);
+  if(leadSharePct <= 15 && honkaWon){
+    signals.push({level:'strength', icon:'🔥', text:`Honka won despite leading for only ${leadSharePct}% of the game.`});
+  }
+
+  const foulTrouble = players.filter(p => p.pf >= 4).sort((a,b)=>b.pf-a.pf);
+  foulTrouble.forEach(p => {
+    signals.push({level: p.pf >= 5 ? 'critical' : 'watch', icon:'🟨', text:`<b>${p.n}</b>: ${p.pf} fouls${p.pf>=5?' (fouled out)':''}.`});
+  });
+
+  const sloppy = players.filter(p => p.to >= 4).sort((a,b)=>b.to-a.to);
+  sloppy.forEach(p => {
+    signals.push({level:'watch', icon:'↩️', text:`<b>${p.n}</b>: ${p.to} turnovers in the game.`});
+  });
+
+  const coldShooters = players.filter(p => p.fga >= 8 && p.pct_fg !== null && p.pct_fg < 0.32);
+  coldShooters.forEach(p => {
+    const fgm = Math.round(p.fga * p.pct_fg);
+    signals.push({level:'weakness', icon:'🧊', text:`<b>${p.n}</b>: ${fgm} made of ${p.fga} shot attempts (2P+3P).`});
+  });
+
+  const withMinutes = players.filter(p => (p.min||0) >= 8);
+  if(withMinutes.length){
+    const best = withMinutes.reduce((a,b)=> (a.pm > b.pm ? a : b));
+    const worst = withMinutes.reduce((a,b)=> (a.pm < b.pm ? a : b));
+    if(best.pm >= 10){
+      signals.push({level:'strength', icon:'📈', text:`<b>${best.n}</b>: ± ${best.pm} on the floor.`});
+    }
+    if(worst.n !== best.n){
+      if(worst.pm <= -15){
+        signals.push({level:'critical', icon:'📉', text:`<b>${worst.n}</b>: ± ${worst.pm} on the floor.`});
+      } else if(worst.pm <= -10){
+        signals.push({level:'weakness', icon:'📉', text:`<b>${worst.n}</b>: ± ${worst.pm} on the floor.`});
+      }
+    }
+  }
+
+  const benchSpark = players.filter(p => !p.st && (p.pts >= 10 || Number(p.eq) >= 12));
+  benchSpark.forEach(p => {
+    signals.push({level:'strength', icon:'✨', text:`Bench player <b>${p.n}</b>: ${p.pts} points, efficiency rating ${p.eq}.`});
+  });
+
+  return signals;
+}
+
+function buildWatchStrengthsHTML(signals){
+  const strengths = signals.filter(s => s.level === 'strength');
+  const watch = signals.filter(s => s.level !== 'strength');
+  const renderList = items => items.length
+    ? items.map(s => `
+      <div class="signal ${s.level}">
+        <span class="icon">${s.icon}</span>
+        <span>${s.text}</span>
+      </div>`).join('')
+    : '<div class="signal"><span style="color:var(--text-dim);">Nothing notable.</span></div>';
+  return `
+    <div class="card">
+      <div class="section-title">💪 Strengths — Tapiolan Honka</div>
+      ${renderList(strengths)}
+      <div class="note">Players and team-level stats where Honka is clearly doing well in this game.</div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">⚠️ Watch out — Tapiolan Honka</div>
+      ${renderList(watch)}
+      <div class="note">Players and team-level stats that are a concern — foul trouble, turnovers, cold shooting, bad ±, or a worrying team trend.</div>
+    </div>`;
+}
+
+function seasonEffBaseline(allGames, genderKey, excludeGameId){
+  const totals = {};
+  (allGames||[]).forEach(g => {
+    if(g.gender !== genderKey) return;
+    if(g.status !== 'CONFIRMED' || g.scoreA === null) return;
+    if(g.id === excludeGameId) return;
+    [...(g.players||[]), ...(g.oppPlayers||[])].forEach(p => {
+      const totalMin = (p.min||0) + (p.sec||0)/60;
+      if(totalMin <= 0) return;
+      const eqNum = Number(p.eq);
+      if(isNaN(eqNum)) return;
+      if(!totals[p.n]) totals[p.n] = { eq: 0, min: 0 };
+      totals[p.n].eq += eqNum;
+      totals[p.n].min += totalMin;
+    });
+  });
+  const result = {};
+  Object.keys(totals).forEach(n => { result[n] = totals[n].eq / totals[n].min; });
+  return result;
+}
+
+function overUnderQualifiers(players, seasonMap){
+  return (players||[])
+    .filter(p => ((p.min||0) + (p.sec||0)/60) >= 1)
+    .map(p => {
+      const totalMin = (p.min||0) + (p.sec||0)/60;
+      const eqNum = Number(p.eq);
+      const gameEff = (totalMin > 0 && !isNaN(eqNum)) ? eqNum/totalMin : null;
+      const seasonEff = Object.prototype.hasOwnProperty.call(seasonMap, p.n) ? seasonMap[p.n] : null;
+      const delta = (gameEff !== null && seasonEff !== null) ? gameEff - seasonEff : null;
+      return { ...p, _gameEff: gameEff, _seasonEff: seasonEff, _delta: delta };
+    })
+    .filter(p => p._delta !== null);
+}
+
+function overUnderRowHTML(p, kind){
+  const minStr = `${p.min ?? 0}:${String(p.sec ?? 0).padStart(2,'0')}`;
+  const cls = kind === 'over' ? 'eff-high' : 'eff-low';
+  const sign = p._delta > 0 ? '+' : '';
+  return `
+    <div class="pmd-row">
+      <span class="pmd-name">#${p.sh ?? '–'} ${p.n}<span class="pmd-substats">(${minStr} min, ${sign}${p._delta.toFixed(2)} eff/min vs. season)</span></span>
+      <div class="pmd-bar-row">
+        <span class="pmd-eff ${cls}" style="font-size:14px;">${p._gameEff.toFixed(2)} eff/min <span style="opacity:.65;font-weight:400;">(avg ${p._seasonEff.toFixed(2)})</span></span>
+      </div>
+    </div>`;
+}
+
+function overUnderBlockHTML(players, seasonMap, teamLabel, kind){
+  const list = overUnderQualifiers(players, seasonMap);
+  if(!list.length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No season baseline available yet for this team's players.</p></div>`;
+  }
+  const sortedDesc = [...list].sort((a,b) => b._delta - a._delta);
+  const k = Math.min(3, Math.floor(sortedDesc.length / 2) || sortedDesc.length);
+  const picked = kind === 'over'
+    ? sortedDesc.slice(0, k)
+    : sortedDesc.slice(sortedDesc.length - k).sort((a,b) => a._delta - b._delta);
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      ${picked.map(p => overUnderRowHTML(p, kind)).join('')}
+    </div>`;
+}
+
+function buildOverperformersHTML(honkaPlayers, oppPlayers, oppName, seasonMap){
+  return `
+    <div class="card">
+      <div class="section-title">📈 OVERPERFORMERS — top 3 per team</div>
+      ${overUnderBlockHTML(honkaPlayers, seasonMap, 'Tapiolan Honka', 'over')}
+      ${overUnderBlockHTML(oppPlayers, seasonMap, oppName, 'over')}
+      <div class="note">The players on each team playing furthest above their own season-average EFF/min (eq ÷ minutes played) in this game. Minimum 1 minute played, and needs a season baseline from other played games to compare against.</div>
+    </div>`;
+}
+
+function buildUnderperformersHTML(honkaPlayers, oppPlayers, oppName, seasonMap){
+  return `
+    <div class="card">
+      <div class="section-title">📉 UNDERPERFORMERS — bottom 3 per team</div>
+      ${overUnderBlockHTML(honkaPlayers, seasonMap, 'Tapiolan Honka', 'under')}
+      ${overUnderBlockHTML(oppPlayers, seasonMap, oppName, 'under')}
+      <div class="note">The players on each team playing furthest below their own season-average EFF/min in this game. Minimum 1 minute played, and needs a season baseline from other played games to compare against.</div>
+    </div>`;
+}
+
+function buildBreakSummaryHTML(game, honkaIsA){
+  const [tA, tB] = game.teams;
+  const hTeam = tA.name === TEAM_NAME ? tA : tB;
+  const oTeam = tA.name === TEAM_NAME ? tB : tA;
+
+  const seasonMap = seasonEffBaseline(gamesAllCache, game.gender, game.id);
+  const overHTML = buildOverperformersHTML(game.players || [], game.oppPlayers || [], oTeam.name, seasonMap);
+  const underHTML = buildUnderperformersHTML(game.players || [], game.oppPlayers || [], oTeam.name, seasonMap);
+  const pmBothHTML = buildPmPerMinBothTeamsHTML(game.players || [], game.oppPlayers || [], oTeam.name);
+  const shootingBothHTML = buildShootingBothTeamsHTML(game.players || [], game.oppPlayers || [], oTeam.name);
+  const fourFactorsHTML = buildFourFactorsHTML(game.players || [], game.oppPlayers || [], oTeam.name);
+  const honkaWonSoFar = (honkaIsA ? game.scoreA : game.scoreB) > (honkaIsA ? game.scoreB : game.scoreA);
+  const breakSignals = buildSignals(hTeam, oTeam, game.players || [], honkaWonSoFar);
+  const watchStrengthsHTML = buildWatchStrengthsHTML(breakSignals);
+
+  return `
+    <div class="card">
+      ${gameClockLabel(game)}
+      <div class="matchup">
+        <span class="team-name ${game.teamA===TEAM_NAME?'honka':''}">${game.teamA}</span>
+        <span class="score">${game.scoreA} – ${game.scoreB}</span>
+        <span class="team-name ${game.teamB===TEAM_NAME?'honka':''}">${game.teamB}</span>
+      </div>
+      <div class="meta-row">${fmtDate(game.time)} · ${game.arena || ''} ${game.attendance ? '· Attendance ' + game.attendance : ''}</div>
+      <div class="periods">${periodCells(game)}</div>
+    </div>
+
+    ${overHTML}
+
+    ${underHTML}
+
+    ${pmBothHTML}
+
+    ${shootingBothHTML}
+
+    ${fourFactorsHTML}
+
+    ${watchStrengthsHTML}
+  `;
+}
+
+function shootingTableHTML(players, teamLabel){
+  const shooters = (players||[]).filter(p => (p.fga||0) >= 1);
+  if(!shooters.length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No shooting stats available.</p></div>`;
+  }
+  const getVal = p => shootingSortBy === '2p' ? p.p2p : shootingSortBy === 'ft' ? p.pft : p.pct_3p;
+  const getAtt = p => shootingSortBy === '2p' ? (p.s2a||0) : shootingSortBy === 'ft' ? (p.fta||0) : (p.s_3a||0);
+  // Best % first; 0% always ranks below any made shot. Ties on % are broken
+  // by whoever took more shots in that category (more attempts ranks higher).
+  const sorted = [...shooters].sort((a,b) => {
+    const av = getVal(a) ?? -1, bv = getVal(b) ?? -1;
+    if(bv !== av) return bv - av;
+    return getAtt(b) - getAtt(a);
+  });
+  const n = sorted.length;
+  const highlight3p = shootingSortBy === '3p';
+  const highlight2p = shootingSortBy === '2p';
+  const highlightFt = shootingSortBy === 'ft';
+  const badStyle = ' style="color:var(--red);font-weight:800;"';
+  const colCls = active => active ? ' col-sorted' : '';
+  const rowsHTML = sorted.map((p, i) => {
+    const has2 = (p.s2a||0) >= 1;
+    const has3 = (p.s_3a||0) >= 1;
+    const hasFt = (p.fta||0) >= 1;
+    const rankClass = i < 3 ? 'pm-pos' : (i >= n-3 ? 'pm-neg' : '');
+    const bad3 = has3 && p.pct_3p < 0.33;
+    const bad2 = has2 && p.p2p < 0.50;
+    const badFt = hasFt && p.pft < 0.67;
+    const m3 = Math.round(p.s_3a*p.pct_3p);
+    return `
+      <tr>
+        <td>${p.n}</td>
+        <td class="num${colCls(highlight3p)} ${highlight3p ? rankClass : ''}"${bad3 ? badStyle : ''}>${has3 ? `${m3}/${p.s_3a} (${pct1(p.pct_3p)})` : '–'}</td>
+        <td class="num${colCls(highlight2p)} ${highlight2p ? rankClass : ''}"${bad2 ? badStyle : ''}>${has2 ? `${p.s2m}/${p.s2a} (${pct1(p.p2p)})` : '–'}</td>
+        <td class="num${colCls(highlightFt)} ${highlightFt ? rankClass : ''}"${badFt ? badStyle : ''}>${hasFt ? `${p.ftm}/${p.fta} (${pct1(p.pft)})` : '–'}</td>
+      </tr>`;
+  }).join('');
+
+  const arrow = key => shootingSortBy === key ? '<span class="sort-arrow">▼</span>' : '';
+
+  const totA3 = sorted.reduce((s,p) => s + (p.s_3a||0), 0);
+  const totM3 = sorted.reduce((s,p) => s + Math.round((p.s_3a||0)*(p.pct_3p||0)), 0);
+  const totA2 = sorted.reduce((s,p) => s + (p.s2a||0), 0);
+  const totM2 = sorted.reduce((s,p) => s + (p.s2m||0), 0);
+  const totAFt = sorted.reduce((s,p) => s + (p.fta||0), 0);
+  const totMFt = sorted.reduce((s,p) => s + (p.ftm||0), 0);
+  const totBad3 = totA3 > 0 && (totM3/totA3) < 0.33;
+  const totBad2 = totA2 > 0 && (totM2/totA2) < 0.50;
+  const totBadFt = totAFt > 0 && (totMFt/totAFt) < 0.67;
+  const totalRowHTML = `
+    <tr class="team-total-row" style="font-weight:700;border-top:2px solid var(--border);">
+      <td>Team total</td>
+      <td class="num${colCls(highlight3p)}"${totBad3 ? badStyle : ''}>${totA3 ? `${totM3}/${totA3} (${pct1(totM3/totA3)})` : '–'}</td>
+      <td class="num${colCls(highlight2p)}"${totBad2 ? badStyle : ''}>${totA2 ? `${totM2}/${totA2} (${pct1(totM2/totA2)})` : '–'}</td>
+      <td class="num${colCls(highlightFt)}"${totBadFt ? badStyle : ''}>${totAFt ? `${totMFt}/${totAFt} (${pct1(totMFt/totAFt)})` : '–'}</td>
+    </tr>`;
+
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      <table class="players">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="num sortable ${shootingSortBy==='3p'?'active col-sorted':''}" onclick="setShootingSort('3p')">3P made/att (%)${arrow('3p')}</th>
+            <th class="num sortable ${shootingSortBy==='2p'?'active col-sorted':''}" onclick="setShootingSort('2p')">2P made/att (%)${arrow('2p')}</th>
+            <th class="num sortable ${shootingSortBy==='ft'?'active col-sorted':''}" onclick="setShootingSort('ft')">FT made/att (%)${arrow('ft')}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}${totalRowHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+function buildShootingBothTeamsHTML(honkaPlayers, oppPlayers, oppName){
+  return `
+    <div class="card">
+      <div class="section-title">🎯 Shooting accuracy, most to least accurate — both teams</div>
+      ${shootingTableHTML(honkaPlayers, 'Tapiolan Honka')}
+      ${shootingTableHTML(oppPlayers, oppName)}
+      <div class="note">Sorted by 3-point accuracy by default. Click a column header (3P / 2P / FT) to sort each team's table by that stat. Min. 1 attempt to appear in a column. Green/red highlight = three most/least accurate on that team by the current sort. Bold red text = below a cold-shooting threshold (3P &lt; 33%, 2P &lt; 50%, FT &lt; 67%), regardless of rank. A "–" means no attempts in that category. M/A = made/attempted.</div>
+    </div>`;
+}
+
+function aggregateSeasonHonka(games, genderKey){
+  const played = (games||[]).filter(g => g.gender === genderKey && g.status === 'CONFIRMED' && g.scoreA !== null);
+  const map = {};
+  played.forEach(g => {
+    (g.players || []).forEach(p => {
+      const totalMin = (p.min||0) + (p.sec||0)/60;
+      if(totalMin <= 0) return;
+      if(!map[p.n]){
+        map[p.n] = { n: p.n, sh: p.sh, min: 0, pts: 0, rt: 0, ass: 0, stl: 0, to: 0, blk: 0, pm: 0, eq: 0,
+                     s2m: 0, s2a: 0, s3m: 0, s3a: 0, ftm: 0, fta: 0, ro: 0, rd: 0, games: 0 };
+      }
+      const agg = map[p.n];
+      const eqNum = Number(p.eq);
+      const m3 = Math.round((p.s_3a||0) * (p.pct_3p||0));
+      agg.min += totalMin;
+      agg.games += 1;
+      agg.pts += p.pts||0;
+      agg.rt += p.rt||0;
+      agg.ass += p.ass||0;
+      agg.stl += p.stl||0;
+      agg.to += p.to||0;
+      agg.blk += (p.blk!==undefined && p.blk!==null) ? p.blk : 0;
+      agg.pm += p.pm||0;
+      if(!isNaN(eqNum)) agg.eq += eqNum;
+      agg.s2m += p.s2m||0;
+      agg.s2a += p.s2a||0;
+      agg.s3m += m3;
+      agg.s3a += p.s_3a||0;
+      agg.ftm += p.ftm||0;
+      agg.fta += p.fta||0;
+      agg.ro += (p.ro||0);
+      agg.rd += (p.rd||0);
+    });
+  });
+  return Object.values(map);
+}
+
+function seasonOppDRB(games, genderKey){
+  const played = (games||[]).filter(g => g.gender === genderKey && g.status === 'CONFIRMED' && g.scoreA !== null);
+  let total = 0;
+  played.forEach(g => (g.oppPlayers||[]).forEach(p => { total += (p.rd||0); }));
+  return total;
+}
+
+function seasonFourFactorsTableHTML(aggArr, teamMinutesTotal, teamORB, oppDRB, teamLabel){
+  if(!aggArr.length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No data available.</p></div>`;
+  }
+  const orbDenom = teamORB + oppDRB;
+  const withStats = aggArr.map(p => {
+    const fga = p.s2a + p.s3a;
+    const fgm = p.s2m + p.s3m;
+    const efg = fga > 0 ? (fgm + 0.5*p.s3m) / fga : null;
+    const tovDenom = fga + 0.44*p.fta + p.to;
+    const tovPct = tovDenom > 0 ? p.to / tovDenom : null;
+    const orbPct = (p.min > 0 && orbDenom > 0) ? (p.ro * (teamMinutesTotal/5)) / (p.min * orbDenom) : null;
+    const ftRate = fga > 0 ? p.fta / fga : null;
+    return { ...p, _efg: efg, _tov: tovPct, _orb: orbPct, _ftRate: ftRate };
+  });
+  const sortKeyMap = { efg: '_efg', tov: '_tov', orb: '_orb', ft: '_ftRate' };
+  const sortKey = sortKeyMap[ffSortBy] || '_efg';
+  const sortAscending = ffSortBy === 'tov';
+  const sorted = [...withStats].sort((a,b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if(av === null && bv === null) return 0;
+    if(av === null) return 1;
+    if(bv === null) return -1;
+    return sortAscending ? (av - bv) : (bv - av);
+  });
+  const colCls = key => ffSortBy === key ? ' col-sorted' : '';
+  const rowsHTML = sorted.map(p => `
+    <tr>
+      <td>${p.n}</td>
+      <td class="num${colCls('efg')}" style="${ffStatColor('efg', p._efg)}">${p._efg === null ? '–' : pct1(p._efg)}</td>
+      <td class="num${colCls('tov')}" style="${ffStatColor('tov', p._tov)}">${p._tov === null ? '–' : pct1(p._tov)}</td>
+      <td class="num${colCls('orb')}" style="${ffStatColor('orb', p._orb)}">${p._orb === null ? '–' : pct1(p._orb)}</td>
+      <td class="num${colCls('ft')}" style="${ffStatColor('ft', p._ftRate)}">${p._ftRate === null ? '–' : p._ftRate.toFixed(2)}</td>
+    </tr>`).join('');
+  const arrow = key => ffSortBy === key ? `<span class="sort-arrow">${key==='tov' ? '▲' : '▼'}</span>` : '';
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      <table class="players">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="num sortable ${ffSortBy==='efg'?'active col-sorted':''}" onclick="setFfSort('efg')">eFG%${arrow('efg')}</th>
+            <th class="num sortable ${ffSortBy==='tov'?'active col-sorted':''}" onclick="setFfSort('tov')">TOV%${arrow('tov')}</th>
+            <th class="num sortable ${ffSortBy==='orb'?'active col-sorted':''}" onclick="setFfSort('orb')">ORB%${arrow('orb')}</th>
+            <th class="num sortable ${ffSortBy==='ft'?'active col-sorted':''}" onclick="setFfSort('ft')">FT Rate${arrow('ft')}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+function buildSeasonFourFactorsHTML(allGames, genderKey, agg){
+  const teamMinutesTotal = agg.reduce((s,p) => s + p.min, 0);
+  const teamORB = agg.reduce((s,p) => s + p.ro, 0);
+  const oppDRB = seasonOppDRB(allGames, genderKey);
+  const tableHTML = seasonFourFactorsTableHTML(agg, teamMinutesTotal, teamORB, oppDRB, 'Tapiolan Honka');
+  return `
+    <div class="card">
+      <div class="section-title">🧮 FOUR FACTORS — full season</div>
+      ${tableHTML}
+      <div class="note">Same per-player four factors as the in-game tabs, but computed from season totals (shooting, turnovers, free throws, offensive rebounds all summed across every played game). Text color is against fixed benchmark thresholds, not relative to the other rows: green = good, white = average, red = poor (eFG% good ≥50%/poor &lt;40%; TOV% good ≤12%/poor ≥18%, lower is better; ORB% good ≥30%/poor &lt;20%; FT Rate good ≥0.25/poor &lt;0.12). ORB% uses the season total of Honka's offensive rebounds and the season total of opponents' defensive rebounds as the shared denominator, since opponents change game to game.</div>
+    </div>`;
+}
+
+function buildSeasonJundexChart(agg){
+  if(!agg.length) return '<p style="color:var(--text-dim);">No season data available yet.</p>';
+  const withRate = agg.map(p => ({
+    ...p,
+    _pmPerMin: p.min > 0 ? p.pm / p.min : 0,
+    _effPerMin: p.min > 0 ? p.eq / p.min : null,
+  }));
+  const sorted = jundexSortBy === 'eff'
+    ? [...withRate].sort((a,b) => (b._effPerMin ?? -Infinity) - (a._effPerMin ?? -Infinity))
+    : [...withRate].sort((a,b) => b._pmPerMin - a._pmPerMin);
+  // The bar always tracks whichever metric is currently the active sort
+  // (±/min or EFF/min), colored green when that metric is positive and red
+  // when it's negative.
+  const metricOf = p => jundexSortBy === 'eff' ? (p._effPerMin ?? 0) : p._pmPerMin;
+  const maxAbs = Math.max(0.05, ...sorted.map(p => Math.abs(metricOf(p))));
+  return sorted.map(p => {
+    const activeVal = metricOf(p);
+    const widthPct = Math.min(50, Math.round((Math.abs(activeVal)/maxAbs)*50));
+    const cls = activeVal >= 0 ? 'pos' : 'neg';
+    const valCls = p._pmPerMin > 0 ? 'pm-pos' : (p._pmPerMin < 0 ? 'pm-neg' : '');
+    const fgaTotal = p.s2a + p.s3a;
+    const fgmTotal = p.s2m + p.s3m;
+    const efg = fgaTotal > 0 ? (fgmTotal + 0.5*p.s3m) / fgaTotal : null;
+    const efgStr = efg === null ? '–' : pct(efg);
+    const sub = `<span class="pmd-key-stat">${p.min.toFixed(0)} min</span>, <span class="pmd-key-stat">${p.pts}pts</span>, <span class="pmd-key-stat">${p.rt}reb</span>, <span class="pmd-key-stat">${p.ass}ast</span>, ${p.blk}blk, ${p.stl}stl, ${p.to}to, ${Math.round(p.eq)}eff, ${efgStr} eFG, ${p.games}gp`;
+    const sign = p._pmPerMin > 0 ? '+' : '';
+    let effStr = '–', effCls = '';
+    if(p._effPerMin !== null){
+      effStr = `${p._effPerMin.toFixed(2)} eff/min`;
+      if(p._effPerMin > 0.7) effCls = 'eff-high';
+      else if(p._effPerMin < 0) effCls = 'eff-low';
+    }
+    return `
+      <div class="pmd-row">
+        <span class="pmd-name">#${p.sh ?? '–'} ${p.n}<span class="pmd-substats">(${sub})</span></span>
+        <div class="pmd-bar-row">
+          <div class="pm-track"><div class="pm-mid"></div><div class="pm-fill ${cls}" style="width:${widthPct}%"></div></div>
+          <span class="pmd-val ${valCls} ${jundexSortBy==='pm' ? 'col-active' : ''}">${sign}${p._pmPerMin.toFixed(2)} ±/min</span>
+          <span class="pmd-eff ${effCls} ${jundexSortBy==='eff' ? 'col-active' : ''}">${effStr}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function seasonShootingTableHTML(agg, teamLabel){
+  const shooters = agg.filter(p => (p.s2a + p.s3a) >= 1);
+  if(!shooters.length){
+    return `<div class="foul-team-block"><div class="foul-team-label">${teamLabel}</div><p style="color:var(--text-dim);font-size:13px;margin:0;">No shooting stats available.</p></div>`;
+  }
+  const withPct = shooters.map(p => {
+    const fga = p.s2a + p.s3a;
+    const fgm = p.s2m + p.s3m;
+    return {
+      ...p,
+      _pctFg: fga > 0 ? fgm / fga : 0,
+      _pct3: p.s3a >= 1 ? p.s3m / p.s3a : null,
+      _pct2: p.s2a >= 1 ? p.s2m / p.s2a : null,
+      _pctFt: p.fta >= 1 ? p.ftm / p.fta : null,
+    };
+  });
+  const getVal = p => shootingSortBy === '2p' ? p._pct2 : shootingSortBy === 'ft' ? p._pctFt : p._pct3;
+  const getAtt = p => shootingSortBy === '2p' ? (p.s2a||0) : shootingSortBy === 'ft' ? (p.fta||0) : (p.s3a||0);
+  // Best % first; 0% always ranks below any made shot. Ties on % are broken
+  // by whoever took more shots in that category (more attempts ranks higher).
+  const sorted = [...withPct].sort((a,b) => {
+    const av = getVal(a) ?? -1, bv = getVal(b) ?? -1;
+    if(bv !== av) return bv - av;
+    return getAtt(b) - getAtt(a);
+  });
+  const n = sorted.length;
+  const highlight3p = shootingSortBy === '3p';
+  const highlight2p = shootingSortBy === '2p';
+  const highlightFt = shootingSortBy === 'ft';
+  const badStyle = ' style="color:var(--red);font-weight:800;"';
+  const colCls = active => active ? ' col-sorted' : '';
+  const rowsHTML = sorted.map((p, i) => {
+    const has2 = p.s2a >= 1, has3 = p.s3a >= 1, hasFt = p.fta >= 1;
+    const rankClass = i < 3 ? 'pm-pos' : (i >= n-3 ? 'pm-neg' : '');
+    const bad3 = has3 && p._pct3 < 0.33;
+    const bad2 = has2 && p._pct2 < 0.50;
+    const badFt = hasFt && p._pctFt < 0.67;
+    return `
+      <tr>
+        <td>${p.n}</td>
+        <td class="num${colCls(highlight3p)} ${highlight3p ? rankClass : ''}"${bad3 ? badStyle : ''}>${has3 ? `${p.s3m}/${p.s3a} (${pct1(p._pct3)})` : '–'}</td>
+        <td class="num${colCls(highlight2p)} ${highlight2p ? rankClass : ''}"${bad2 ? badStyle : ''}>${has2 ? `${p.s2m}/${p.s2a} (${pct1(p._pct2)})` : '–'}</td>
+        <td class="num${colCls(highlightFt)} ${highlightFt ? rankClass : ''}"${badFt ? badStyle : ''}>${hasFt ? `${p.ftm}/${p.fta} (${pct1(p._pctFt)})` : '–'}</td>
+      </tr>`;
+  }).join('');
+
+  const arrow = key => shootingSortBy === key ? '<span class="sort-arrow">▼</span>' : '';
+
+  const totA3 = sorted.reduce((s,p) => s + (p.s3a||0), 0);
+  const totM3 = sorted.reduce((s,p) => s + (p.s3m||0), 0);
+  const totA2 = sorted.reduce((s,p) => s + (p.s2a||0), 0);
+  const totM2 = sorted.reduce((s,p) => s + (p.s2m||0), 0);
+  const totAFt = sorted.reduce((s,p) => s + (p.fta||0), 0);
+  const totMFt = sorted.reduce((s,p) => s + (p.ftm||0), 0);
+  const totBad3 = totA3 > 0 && (totM3/totA3) < 0.33;
+  const totBad2 = totA2 > 0 && (totM2/totA2) < 0.50;
+  const totBadFt = totAFt > 0 && (totMFt/totAFt) < 0.67;
+  const totalRowHTML = `
+    <tr class="team-total-row" style="font-weight:700;border-top:2px solid var(--border);">
+      <td>Team total</td>
+      <td class="num${colCls(highlight3p)}"${totBad3 ? badStyle : ''}>${totA3 ? `${totM3}/${totA3} (${pct1(totM3/totA3)})` : '–'}</td>
+      <td class="num${colCls(highlight2p)}"${totBad2 ? badStyle : ''}>${totA2 ? `${totM2}/${totA2} (${pct1(totM2/totA2)})` : '–'}</td>
+      <td class="num${colCls(highlightFt)}"${totBadFt ? badStyle : ''}>${totAFt ? `${totMFt}/${totAFt} (${pct1(totMFt/totAFt)})` : '–'}</td>
+    </tr>`;
+
+  return `
+    <div class="foul-team-block">
+      <div class="foul-team-label">${teamLabel}</div>
+      <table class="players">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="num sortable ${shootingSortBy==='3p'?'active col-sorted':''}" onclick="setShootingSort('3p')">3P made/att (%)${arrow('3p')}</th>
+            <th class="num sortable ${shootingSortBy==='2p'?'active col-sorted':''}" onclick="setShootingSort('2p')">2P made/att (%)${arrow('2p')}</th>
+            <th class="num sortable ${shootingSortBy==='ft'?'active col-sorted':''}" onclick="setShootingSort('ft')">FT made/att (%)${arrow('ft')}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}${totalRowHTML}</tbody>
+      </table>
+    </div>`;
+}
+
+function buildFullSeasonHTML(allGames, genderKey){
+  const leagueLabel = genderKey === 'men' ? "Korisliiga (Men)" : "Naisten Korisliiga (Women)";
+  const agg = aggregateSeasonHonka(allGames, genderKey);
+  const gamesPlayed = (allGames||[]).filter(g => g.gender === genderKey && g.status === 'CONFIRMED' && g.scoreA !== null).length;
+  return `
+    <div class="card">
+      <div class="matchup" style="justify-content:center;">
+        <span class="team-name honka">Tapiolan Honka</span>
+      </div>
+      <div class="meta-row" style="text-align:center;">${leagueLabel} · season aggregate across ${gamesPlayed} played game${gamesPlayed === 1 ? '' : 's'}</div>
+    </div>
+    <div class="card">
+      <div class="section-title">📈 JUNDEX MODIFIED INDEX — full season</div>
+      <div class="sort-row">
+        <span class="sort-row-label">Sort by</span>
+        <button type="button" class="sort-pill ${jundexSortBy==='pm'?'active':''}" onclick="setJundexSort('pm')">± per min</button>
+        <button type="button" class="sort-pill ${jundexSortBy==='eff'?'active':''}" onclick="setJundexSort('eff')">EFF per min</button>
+      </div>
+      <div class="foul-team-block">
+        <div class="foul-team-label">Tapiolan Honka</div>
+        ${buildSeasonJundexChart(agg)}
+      </div>
+      <div class="note">Same metric as the in-game tab, but summed/aggregated over every played game this season instead of a single game — ±/min and eff/min are each season totals divided by season minutes played, so floor-time differences across games still wash out. Sorted by ${jundexSortBy === 'eff' ? 'EFF/min' : '±/min'} (use the buttons above to switch). Fouls are intentionally left off this tab. In parentheses after each name: total minutes, points, rebounds and assists (highlighted in white), blocks, steals, turnovers, efficiency (eq), eFG, and games played (gp) — all season totals.</div>
+    </div>
+    <div class="card">
+      <div class="section-title">🎯 Shooting accuracy — full season</div>
+      ${seasonShootingTableHTML(agg, 'Tapiolan Honka')}
+      <div class="note">Season totals. Sorted by 3-point accuracy by default. Click a column header (3P / 2P / FT) to sort by that stat. Min. 1 attempt to appear in a column. Green/red highlight = three most/least accurate by the current sort. Bold red text = below a cold-shooting threshold (3P &lt; 33%, 2P &lt; 50%, FT &lt; 67%), regardless of rank. M/A = made/attempted.</div>
+    </div>
+
+    ${buildSeasonFourFactorsHTML(allGames, genderKey, agg)}`;
+}
+
+function ffStatColor(key, value){
+  if(value === null || value === undefined) return '';
+  const T = {
+    efg: { good: 0.50, poor: 0.40, lowerBetter: false },
+    tov: { good: 0.12, poor: 0.18, lowerBetter: true },
+    orb: { good: 0.30, poor: 0.20, lowerBetter: false },
+    ft:  { good: 0.25, poor: 0.12, lowerBetter: false },
+  }[key];
+  if(!T) return '';
+  const isGood = T.lowerBetter ? value <= T.good : value >= T.good;
+  const isPoor = T.lowerBetter ? value >= T.poor : value < T.poor;
+  if(isGood) return 'color:var(--accent-2);font-weight:800;';
+  if(isPoor) return 'color:var(--red);font-weight:800;';
+  return 'color:var(--text);';
+}
+
+loadGames();
+</script>
+</body>
+</html>
